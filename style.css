@@ -1,0 +1,54 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+
+.main-playing-area {
+  /*may be better to put img on each 'square' or no background
+  img at all */
+  /* background-image: url('./images/board-img.png'); */
+  /* height: 50px; */
+  height: 480px;
+  width: 560px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.board {
+  display: grid;
+  height: 100%;
+  width: 100%;
+
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  border: 5px solid black;
+  column-gap: 0;
+  background-color: rgb(23, 145, 202);
+  /* grid-auto-flow: row;
+  direction: rtl; */
+}
+
+.square {
+  border: 1px solid #6e6464f5;
+  box-sizing: border-box;
+
+  text-align: center;
+  height: 80px;
+  width: 80px;
+  border-radius: 50%;
+  background-color: white;
+}
+
+.red {
+  background-color: red;
+}
+
+.yellow {
+  background-color: yellow;
+}
+
+/*
+can i do something like .square[data-status="red"] instead?
+*/
