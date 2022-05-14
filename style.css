@@ -23,7 +23,7 @@
 
   grid-template-columns: repeat(7, 1fr);
   grid-template-rows: repeat(6, 1fr);
-  border: 5px solid black;
+  border: 5px solid darkblue;
   column-gap: 0;
   background-color: rgb(23, 145, 202);
   /* grid-auto-flow: row;
