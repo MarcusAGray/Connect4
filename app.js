@@ -1,290 +1,527 @@
-const main = document.querySelector(".main-playing-area")
+import { createBoard, 
+         addPlayerEventListeners, 
+         removePlayerEventListeners} from "./board.js";
+
+const main = document.querySelector(".playing-area")
 const playerTurnDisplay = document.getElementById("player-turn-display")
-const infoDisplay = document.getElementById("display")
+const infoDisplay = document.getElementById("game-info-display")
+const playerScoreDisplay = document.getElementById('player-score')
+const computerScoreDisplay = document.getElementById('computer-score')
+const playBtn = document.getElementById('play-btn')
+playBtn.addEventListener('click', startGame)
+const roundDisplay = document.getElementById('round-display')
+const turnDisplay = document.getElementById('turn-display')
+const turnValueDisplay = document.getElementById('turn-value-display')
+const winnerDisplay = document.getElementById('winner-display')
 
-playerTurnDisplay.textContent = 'red'
-const boardArr = []
-let playerTurn = true
-let gameOn = false
+let round = 0
+let playerScore = 0
+let computerScore = 0
 
+const boardEl = createBoard(main);
+let boardArr
+let playersTurn = true
+let isPlayerPrevWinner
+
+const MAX_COL_INDEX = 6
+const MAX_ROW_INDEX = 5
+const COMPUTER_PAUSE_TIME = 1000
+
+let canStartGame = true
+let lastMove
+let secondLastMove
+
+let playerColor = 'red'
+let computerColor = 'yellow'
+
+let playerWinsSound = new Audio('./sounds/player_win.wav');
+let losingSound = new Audio('./sounds/losing.wav');
+let playerSetSpaceSound = new Audio('./sounds/set_space2.wav');
+let computerSetSpaceSound = new Audio('./sounds/set_space1.wav');
+let startGameSound = new Audio('./sounds/startGame.wav');
+
+//Game Drivers
 function startGame() {
-  gameOn = true
-  const board = document.createElement('div')
-  board.classList.add('board')
-
-  //create array of arrays
-  for(let m = 0; m < 7; m++) {
-    boardArr.push([])
+  function setBoard() {
+    addPlayerEventListeners(handlePlayersColumnClick)
+    boardArr.forEach(space => {
+      space.setAttribute('data-status', 'empty')
+      space.classList.remove('red', 'yellow', 'darkened', 'highlight', 'flash')
+    })
+    boardEl.classList.remove('darkened')
   }
 
-  for (let j = 0; j < 7; j++) {
-    const column = document.createElement('div')
-    column.setAttribute('id', `c${j}`)
-    column.classList.add('column')
-    
-    const columnArray = boardArr[j]
-    column.addEventListener('click', () => handleColumnClick(columnArray))
-    
-    //create rows
-    for (let i = 5; i >= 0; i--) {
-      let square = document.createElement('div')
-      square.classList.add('square')
-      square.setAttribute('data-status', 'empty')
-      square.setAttribute('id', `c${j}r${i}`)
+  if(!canStartGame) return
 
-      square.setAttribute('data-column', j)
-      square.setAttribute('data-row', i)
+  canStartGame = false
 
-      // square.textContent = square.getAttribute('id')
-      column.appendChild(square)
-      boardArr[j].unshift(square)
-    }
-    board.appendChild(column)
+  playBtn.textContent = 'Game on!'
+  startGameSound.play()
+  turnDisplay.classList.remove('hidden')
+  winnerDisplay.classList.add('hidden')
+  turnValueDisplay.textContent = playersTurn ? playerColor : computerColor 
+  toggleTurnTextColor()
+
+  lastMove = null
+  secondLastMove = null
+  playersTurn = isPlayerPrevWinner != null ? isPlayerPrevWinner : true 
+
+  turnDisplay.classList.remove('invisible')
+
+  round += 1
+  roundDisplay.textContent = round
+
+  console.log('playersTurn ', playersTurn)
+  boardArr = Array.from(document.querySelectorAll('.space'))
+
+  setBoard()
+  if (!playersTurn) setTimeout(computerTurn, COMPUTER_PAUSE_TIME)
+}
+
+function endTurn() {
+  function isNoMoreMovesAvailable() {
+    return !(boardArr.some(space => space.getAttribute('data-status') == 'empty'))
+  }
+  let color = playersTurn ? playerColor: computerColor
+  if(isConnectFour()) gameOver(color) 
+  else if(isNoMoreMovesAvailable()) gameOver('tie')
+  else switchTurn()
+}
+
+function switchTurn() {
+  playersTurn = !playersTurn
+  turnValueDisplay.textContent = playersTurn ? playerColor : computerColor
+  toggleTurnTextColor()
+  if (!playersTurn) setTimeout(computerTurn, COMPUTER_PAUSE_TIME)
+}
+
+function gameOver(winner) {
+
+  canStartGame = true
+  
+  playBtn.textContent = "Play again"
+  turnDisplay.classList.add('hidden')
+  winnerDisplay.classList.remove('hidden')
+  winnerDisplay.textContent = `${winner} wins!`
+
+  removePlayerEventListeners()
+
+  if(winner == 'tie') {
+    losingSound.play();
+    infoDisplay.textContent = "Tie! No more moves!"
+    return
   }
 
-  main.appendChild(board)
-}
-
-function handleColumnClick(columnArray) {
-  const playerColor = playerTurn ? 'red' : 'yellow'
-  let lowestSquare = columnArray.find(e => 
-  e.getAttribute('data-status') == 'empty'
-  )
-
-  if (typeof lowestSquare == "undefined") return
-   
-  lowestSquare.setAttribute('data-status', playerColor)
-  lowestSquare.classList.add(playerColor)
-
-  isConnectFour(playerColor, lowestSquare)
-  if(gameOn) switchTurns()
-}
-
-function switchTurns() {
-
- playerTurn = !playerTurn;
-  playerTurnDisplay.textContent =playerTurn ? 'red' : 'yellow'
-  if (!playerTurn) {
-    setTimeout(computerTurn, 1000)
-    
+  if (winner == 'red') {
+    playerWinsSound.play();
+    playerScore += 1
+    playerScoreDisplay.textContent = playerScore
+    isPlayerPrevWinner = true
   }
+
+  if (winner == 'yellow') {
+    losingSound.play();
+    console.log("computer wins")
+    computerScore += 1
+    computerScoreDisplay.textContent = computerScore
+    isPlayerPrevWinner = false
+  }
+
+  infoDisplay.textContent = `${winner == "red" ? "Red" : "Yellow"} Wins!`
 }
 
+
+
+
+
+//PLAYER TURN
+function handlePlayersColumnClick(columnId) {
+  if(!playersTurn) return
+  let availableSpace = getLowestEmptyColumnSpace(columnId)
+  
+  //if column is already full player needs to choose another column
+  if (availableSpace == null) return
+  setSpace(availableSpace, playerColor)
+  endTurn()
+}
+
+
+
+
+//COMPUTER TURN AND MOVE CALCULATOR
 function computerTurn() {
-  console.log("computer turn")
-  //choose random column
-  //place color if space in column
+  let winMove
+  let preventativeMove
+  let randomMove
+  console.log("computerTurn fires")
 
-  const playerColor = playerTurn ? 'red' : 'yellow'
-  
-  let lowestSquare
-
-  while (typeof lowestSquare == 'undefined') {
-    console.log("loop")
-    const rand = Math.floor(Math.random() * 7)
-    let columnArray = boardArr[rand]
-    lowestSquare = columnArray.find(e => 
-      e.getAttribute('data-status') == 'empty'
-    )
-  }
- 
-  lowestSquare.setAttribute('data-status', playerColor)
-  lowestSquare.classList.add(playerColor)
-
-  isConnectFour(playerColor, lowestSquare)
-  if(gameOn) switchTurns()
-}
-
-function isConnectFour(playerColor, playedSquare) {
-  
-  const arr = boardArr.flat()
-  
-  function hasVerticalWin() {
-    for (let i = 0; i < 7; i++) {
-  
-      const vertical = arr.map(element => {
-        if (element.getAttribute('data-column') == i &&
-            element.getAttribute('data-status') == playerColor) {
-          return element.getAttribute('data-row')
-        }  
-      }).filter(e => e !== undefined)
-     
-      if (vertical.length >=4 && isConsecutive(vertical)) return true
-    }
-  }
-
-  function hasHorizontalWin() {
-    for (let j = 0; j < 6; j++) {
+  if(lastMove != null) {
+    winMove = getWinningMove()
+    if (lastMove != null && winMove) setSpace(winMove, computerColor)
     
-      const horizontal = arr.map(element => {
-          if (element.getAttribute('data-row') == j &&
-              element.getAttribute('data-status') == playerColor) {
-        return element.getAttribute('data-column')
-      }  
-    }).filter(e => e !== undefined)
-  
-    if (horizontal.length >=4 && isConsecutive(horizontal)) return true
+    if(lastMove != null && !winMove) {
+      preventativeMove = getPreventLossMove()
+      if(preventativeMove) setSpace(preventativeMove, computerColor)
     }
   }
 
-  function hasDiagonalWin() {
-    let playedColumn = playedSquare.getAttribute('data-column')
-    let playedRow = playedSquare.getAttribute('data-row')
-  
-    let col = parseInt(playedColumn)
-    let row = parseInt(playedRow)
-    let keepLooking = true
-    diagonalLength = 1
-  
-    //check top left digonal
-    while(col >= 0 && row < 6 && keepLooking && diagonalLength < 4) {
-      
-      if(col == playedColumn && row == playedRow) {
-        col -= 1
-        row += 1
-        continue
-      }
-      
-      leftUpDiagonalSquare = arr.find(e => 
-        (parseInt(e.getAttribute('data-column')) == col) &&
-        (parseInt(e.getAttribute('data-row')) == row)
-      )
-  
-      if(leftUpDiagonalSquare.getAttribute('data-status') == playerColor){
-        diagonalLength += 1
-      }else {
-        keepLooking = !keepLooking
-      }
-        
-      col -= 1
-      row += 1
-    }
-  
-    col = parseInt(playedColumn)
-    row = parseInt(playedRow)
-    keepLooking = true
-  
-    //check bottom right
-    while(col < 7 && row >= 0 && keepLooking && diagonalLength < 4) {
-      
-      if(col == playedColumn && row == playedRow) {
-        col += 1
-        row -= 1
-        continue
-      }
-      
-      rightDownDiagonalSquare = arr.find(e => 
-        (parseInt(e.getAttribute('data-column')) == col) &&
-        (parseInt(e.getAttribute('data-row')) == row)
-      )
-  
-      if(rightDownDiagonalSquare.getAttribute('data-status') == playerColor){
-        diagonalLength += 1
-      }else {
-        keepLooking = !keepLooking
-      }
-        
-      col += 1
-      row -= 1
-    }
-  
-  
-    if(diagonalLength == 4) return true
-      
-  
-    //Now for the other diagonal check
-  
-    col = parseInt(playedColumn)
-    row = parseInt(playedRow)
-    keepLooking = true
-    diagonalLength = 1
-  
-    //check bottom left
-    while(col >= 0 && row >= 0 && keepLooking && diagonalLength < 4) {
-      
-      if(col == playedColumn && row == playedRow) {
-        col -= 1
-        row -= 1
-        continue
-      }
-      
-      leftDownDiagonalSquare = arr.find(e => 
-        (parseInt(e.getAttribute('data-column')) == col) &&
-        (parseInt(e.getAttribute('data-row')) == row)
-      )
-  
-      if(leftDownDiagonalSquare.getAttribute('data-status') == playerColor){
-        diagonalLength += 1
-      }else {
-        keepLooking = !keepLooking
-      }
-        
-      col -= 1
-      row -= 1
-    }
-  
-  
-    col = parseInt(playedColumn)
-    row = parseInt(playedRow)
-    keepLooking = true
-  
-    //check top right
-    while(col < 7 && row < 6 && keepLooking && diagonalLength < 4) {
-      
-      if(col == playedColumn && row == playedRow) {
-        col += 1
-        row += 1
-        continue
-      }
-      
-      leftUpDiagonalSquare = arr.find(e => 
-        (parseInt(e.getAttribute('data-column')) == col) &&
-        (parseInt(e.getAttribute('data-row')) == row)
-      )
-  
-      if(leftUpDiagonalSquare.getAttribute('data-status') == playerColor){
-        diagonalLength += 1
-      }else {
-        keepLooking = !keepLooking
-      }
-        
-      col += 1
-      row += 1
-    }
-  
-    if(diagonalLength == 4) return true
+  if(!winMove && !preventativeMove) {
+    do {
+      const randColumnId = Math.floor(Math.random() * MAX_COL_INDEX + 1)
+      randomMove = getLowestEmptyColumnSpace(randColumnId)
+    } while (randomMove == null)
+    setSpace(randomMove, computerColor)  
   }
-
-
-  if( hasVerticalWin(playerColor) || 
-      hasHorizontalWin(playerColor) || 
-      hasDiagonalWin(playerColor, playedSquare)) {
-        gameOver(playerColor)
-  }
+  endTurn()
 }
 
-function isConsecutive(array) {
-  array.sort((a, b) => a - b) //may not be needed
+function getWinningMove() {
+  if(secondLastMove == null) return null
 
-  if (array.length > 4) {
-    return isConsecutive(array.slice(1)) || isConsecutive(array.slice(-1))
-  } 
+  function getWinningVertical() {
+    let [row, column] = getSpacePosition(secondLastMove)
+    let nextSpace = secondLastMove
+    const checkedSpaces = []
+    
+    if(row == MAX_ROW_INDEX || 
+      getSpace(column, row + 1).getAttribute('data-status') != 'empty') return null
 
-  // max – min + 1 = n where max is the maximum element in the array, min is the minimum element in the array and n is the number of elements in the array. 
-  for (let i = 0; i < array.length - 1; i++) {
-    if (array[i+1] - array[i] != 1) return false
+    do {
+      checkedSpaces.push(nextSpace)
+      row -= 1;
+      nextSpace = getSpace(column, row)
+    } while (row >=0 && nextSpace.getAttribute('data-status') == computerColor)
+  
+    return (checkedSpaces.length >= 3) ? checkedSpaces : null
   }
-  return true
+
+  function getWinningHorizontal() {
+    let initialSpace = secondLastMove
+    let row 
+    let column 
+    
+    [row, column] = getSpacePosition(initialSpace)
+    
+    let nextSpace = secondLastMove
+    const checkedSpaces = []
+
+    do{
+      checkedSpaces.push(nextSpace)
+      column -= 1;
+      nextSpace = getSpace(column, row)
+    } while (column >= 0 && nextSpace.getAttribute('data-status') == computerColor)
+
+    [row, column] = getSpacePosition(initialSpace)
+    column += 1
+    nextSpace = getSpace(column, row)
+    
+    while (column <= MAX_COL_INDEX && nextSpace.getAttribute('data-status') == computerColor) {
+      checkedSpaces.push(nextSpace)
+      column += 1;
+      nextSpace = getSpace(column, row)
+    }
+
+    checkedSpaces.sort((a, b) => {
+      return a.getAttribute('data-column') - b.getAttribute('data-column')
+    })
+
+    return (checkedSpaces.length >= 3) ? checkedSpaces : null
+  }
+
+  // let connectWin
+  let vConnectWin = getWinningVertical()
+  if(vConnectWin != null) {
+    let [nextMoveRow, nextMoveCol] = getSpacePosition(secondLastMove)
+    nextMoveRow += 1
+    return getSpace(nextMoveCol, nextMoveRow)
+  }
+
+  let hConnectWin = getWinningHorizontal()
+  if(hConnectWin != null) {
+    console.log('ConnectWin')
+    let sideSpaces = getViableSideSpaces(hConnectWin)
+    if (sideSpaces != null && sideSpaces.length == 2) return sideSpaces[Math.floor(Math.random() * 2)]
+    if (sideSpaces != null && sideSpaces.length == 1) return sideSpaces[0]
+  }
+  return null
 }
 
+function getPreventLossMove() {
+  let latestOpponentMove = lastMove
+  let sideSpaces = []
 
-function gameOver(playerColor) {
-  gameOn = false
-  infoDisplay.textContent = `${playerColor == 'red' ? "Red" : "Yellow"} Wins!`
+  //prevent simple vertical win
+  let verticalThree = getVerticalConnectOf(3, playerColor)
+  if(verticalThree) {
+    let [nextMoveRow, nextMoveCol] = getSpacePosition(latestOpponentMove)
+    nextMoveRow += 1
+    return getSpace(nextMoveCol, nextMoveRow)
+  }
+  
+  //prevent simple horizontal win
+  let horizontalThree = getHorizontalConnectOf(3, playerColor)
+  if(horizontalThree) {
+    sideSpaces = getViableSideSpaces(horizontalThree)
+    if (sideSpaces != null && sideSpaces.length == 2) {
+      return sideSpaces[Math.floor(Math.random() * 2)]
+    }
+    if (sideSpaces != null && sideSpaces.length == 1) return sideSpaces[0]
+  }
+
+  //prevent horizontal two either side empty win
+  let horizontalTwo = getHorizontalConnectOf(2, playerColor)
+  if(horizontalTwo) {
+    sideSpaces = getViableSideSpaces(horizontalTwo)
+    if (sideSpaces != null && sideSpaces.length == 2) {
+      return sideSpaces[Math.floor(Math.random() * 2)]
+    }
+  }
+
+  return null
+}
+
+function getViableSideSpaces(hArray) {
+  /* a potential space has to 1.exist and 2.be a possible target for opponents next move
+   (as a token can only be placed at the lowest empty space in any column) */
+
+  function getViableSpaceOnLeft(hArray) {
+    const hRow = hArray[0].getAttribute('data-row')
+    let leftMostSpace = hArray[0]
+    if(leftMostSpace.getAttribute('data-column') == 0) return false
+  
+    let leftColumn = parseInt(leftMostSpace.getAttribute('data-column')) - 1
+    let space = getSpace(leftColumn, hRow)
+
+    if(space.isEqualNode(getLowestEmptyColumnSpace(leftColumn))) {
+      return getSpace(leftColumn, hRow)
+    }
+    return null
+  }
+
+  function getViableSpaceOnRight(hArray) {
+    const hRow = hArray[0].getAttribute('data-row')
+    let rightMostSpace = hArray[hArray.length - 1]
+    if(rightMostSpace.getAttribute('data-column') == MAX_COL_INDEX) return false
+  
+    let rightColumn = parseInt(rightMostSpace.getAttribute('data-column')) + 1
+    let space = getSpace(rightColumn, hRow)
+
+    if(space.isEqualNode(getLowestEmptyColumnSpace(rightColumn))) {
+      return getSpace(rightColumn, hRow)
+    }
+    return null
+  }
+
+  let leftSpace = getViableSpaceOnLeft(hArray)
+  let rightSpace = getViableSpaceOnRight(hArray)
+  const sideSpaces = []
+  if (leftSpace != null) sideSpaces.push(leftSpace)
+  if (rightSpace != null) sideSpaces.push(rightSpace)
+  return sideSpaces.length > 0 ? sideSpaces : null
 }
 
 
-startGame()
+
+
+//Utils
+function getSpace(columnId, rowId) {
+  return boardArr.find(space => {
+    return space.getAttribute('data-column') == columnId &&
+           space.getAttribute('data-row') == rowId
+  })
+}
+
+function setSpace(space, color){
+  function updateMoves(){
+    secondLastMove = lastMove
+    lastMove = space
+  }
+  space.setAttribute('data-status', color)
+  space.classList.add(color, 'flash')
+
+  updateMoves()
+  color == playerColor ? playerSetSpaceSound.play() : computerSetSpaceSound.play()
+}
+
+function getSpacePosition(space) {
+  let row = parseInt(space.getAttribute('data-row'))
+  let column = parseInt(space.getAttribute('data-column'))
+  return [row, column]
+}
+
+function getLowestEmptyColumnSpace(columnId) {
+  let availableSpace = boardArr.find(space => {
+    return (space.getAttribute('data-column') == columnId &&
+            space.getAttribute('data-status') == 'empty')
+  })
+  return (typeof availableSpace != 'undefined') ? availableSpace : null
+}
+
+function toggleTurnTextColor() {
+  turnValueDisplay.classList.remove('red-text', 'yellow-text')
+  if (playersTurn) {
+    turnValueDisplay.classList.add('red-text')
+  } else {
+    turnValueDisplay.classList.add('yellow-text')
+  }
+}
+
+
+
+//GET CONNECTS
+function getVerticalConnectOf(num, color) {
+  let [row, column] = getSpacePosition(lastMove)
+
+  let nextSpace = lastMove
+  const checkedSpaces = []
+
+  while (row >=0 && nextSpace.getAttribute('data-status') == color) {
+    checkedSpaces.push(nextSpace)
+    row -= 1;
+    nextSpace = getSpace(column, row)
+  }
+
+  return checkedSpaces.length >= num ? checkedSpaces : null
+}
+
+function getHorizontalConnectOf(num, color) {
+    
+  console.log("getHorizontal fired")
+  let nextSpace = lastMove
+  let startingSpace = lastMove
+  const checkedSpaces = []
+  let row
+  let column 
+  
+  [row, column] = getSpacePosition(startingSpace)
+
+  while (column >= 0 && nextSpace.getAttribute('data-status') == color) {
+    checkedSpaces.push(nextSpace)
+    column -= 1;
+    nextSpace = getSpace(column, row)
+  }
+
+  [row, column] = getSpacePosition(startingSpace)
+  column += 1
+  nextSpace = getSpace(column, row)
+  
+  while (column <= MAX_COL_INDEX && nextSpace.getAttribute('data-status') == color) {
+    checkedSpaces.push(nextSpace)
+    column += 1;
+    nextSpace = getSpace(column, row)
+  }
+
+  
+  checkedSpaces.sort((a, b) => {
+    return a.getAttribute('data-column') - b.getAttribute('data-column')
+  })
+
+  return checkedSpaces.length >= num ? checkedSpaces : null
+
+}
+
+function getTopLeftBottomRightConnectOf(num, color) {
+  let nextSpace = lastMove
+  let startingSpace = lastMove
+  const checkedSpaces = []
+  let row
+  let column
+
+  [row, column] = getSpacePosition(startingSpace)
+  
+  while ((column >= 0) && (row <= MAX_ROW_INDEX) && (nextSpace.getAttribute('data-status') == color)) {
+    checkedSpaces.push(nextSpace)
+    column -= 1
+    row += 1
+    nextSpace = getSpace(column, row)
+  }
+
+  [row, column] = getSpacePosition(startingSpace)
+  row -= 1
+  column += 1
+  nextSpace = getSpace(column, row)
+  
+  while (column <= MAX_COL_INDEX && row >= 0 && nextSpace.getAttribute('data-status') == color) {
+    checkedSpaces.push(nextSpace)
+    column += 1
+    row -= 1
+    nextSpace = getSpace(column, row)
+  }
+
+  return checkedSpaces.length >= num ? checkedSpaces : null
+
+}
+
+function getBottomLeftTopRightConnectOf(num, color) {
+  let nextSpace = lastMove
+  let startingSpace = lastMove
+  const checkedSpaces = []
+  let row
+  let column
+
+  [row, column] = getSpacePosition(startingSpace)
+  
+  while ((column >= 0) && (row >= 0) && (nextSpace.getAttribute('data-status') == color)) {
+    checkedSpaces.push(nextSpace)
+    column -= 1
+    row -= 1
+    nextSpace = getSpace(column, row)
+  }
+
+  [row, column] = getSpacePosition(startingSpace)
+  row += 1
+  column += 1
+  nextSpace = getSpace(column, row)
+  
+  while (column <= MAX_COL_INDEX && row <= MAX_ROW_INDEX && nextSpace.getAttribute('data-status') == color) {
+    checkedSpaces.push(nextSpace)
+    column += 1
+    row += 1
+    nextSpace = getSpace(column, row)
+  }
+
+  return checkedSpaces.length >= num ? checkedSpaces : null
+}
+
+
+
+//CHECK FOR WIN
+function isConnectFour() {
+
+  let color = playersTurn ? 'red' : 'yellow'
+  
+  const vWin = getVerticalConnectOf(4, color)
+  const hWin = getHorizontalConnectOf(4, color)
+  const diag1Win = getTopLeftBottomRightConnectOf(4, color)
+  const diag2Win = getBottomLeftTopRightConnectOf(4, color)
+
+  if(vWin || hWin || diag1Win || diag2Win) {
+      boardArr.forEach(space => {
+        space.classList.remove('flash')
+        space.classList.add('darkened')
+      })
+  }
+
+  if(vWin) {
+    vWin.forEach(space => space.classList.remove('darkened'))
+    vWin.forEach(space => space.classList.add('highlight', 'flash'))
+  }
+  if(hWin) {
+    hWin.forEach(space => space.classList.remove('darkened'))
+    hWin.forEach(space => space.classList.add('highlight', 'flash'))
+  }
+  if(diag1Win) {
+    diag1Win.forEach(space => space.classList.remove('darkened'))
+    diag1Win.forEach(space => space.classList.add('highlight', 'flash'))
+  }
+  if(diag2Win) {
+    diag2Win.forEach(space => space.classList.remove('darkened'))
+    diag2Win.forEach(space => space.classList.add('highlight', 'flash'))
+  }
+
+  if(vWin || hWin || diag1Win || diag2Win) return true
+  return false
+}
 
 
 
@@ -292,8 +529,19 @@ startGame()
 
 
 
+//Old function - may be handy if I want to expand project
+// function isConsecutive(num, array) {
+//   array.sort((a, b) => a - b)
 
+//   if (array.length > num) {
+//     return isConsecutive(array.slice(1)) || isConsecutive(array.slice(-1))
+//   } 
 
-
-
-
+//   // max – min + 1 = n where max is the maximum element in the array, 
+//   //min is the minimum element in the array and n is the number of 
+//   //elements in the array. 
+//   for (let i = 0; i < array.length - 1; i++) {
+//     if (array[i+1] - array[i] != 1) return false
+//   }
+//   return true
+// }
