@@ -9,12 +9,10 @@ const playerScoreDisplay = document.getElementById('player-score')
 const computerScoreDisplay = document.getElementById('computer-score')
 const playBtn = document.getElementById('play-btn')
 playBtn.addEventListener('click', startGame)
-const roundDisplay = document.getElementById('round-display')
 const turnDisplay = document.getElementById('turn-display')
 const turnValueDisplay = document.getElementById('turn-value-display')
 const winnerDisplay = document.getElementById('winner-display')
 
-let round = 0
 let playerScore = 0
 let computerScore = 0
 
@@ -68,10 +66,6 @@ function startGame() {
 
   turnDisplay.classList.remove('invisible')
 
-  round += 1
-  roundDisplay.textContent = round
-
-  console.log('playersTurn ', playersTurn)
   boardArr = Array.from(document.querySelectorAll('.space'))
 
   setBoard()
@@ -121,7 +115,6 @@ function gameOver(winner) {
 
   if (winner == 'yellow') {
     losingSound.play();
-    console.log("computer wins")
     computerScore += 1
     computerScoreDisplay.textContent = computerScore
     isPlayerPrevWinner = false
@@ -153,7 +146,6 @@ function computerTurn() {
   let winMove
   let preventativeMove
   let randomMove
-  console.log("computerTurn fires")
 
   if(lastMove != null) {
     winMove = getWinningMove()
@@ -238,7 +230,6 @@ function getWinningMove() {
 
   let hConnectWin = getWinningHorizontal()
   if(hConnectWin != null) {
-    console.log('ConnectWin')
     let sideSpaces = getViableSideSpaces(hConnectWin)
     if (sideSpaces != null && sideSpaces.length == 2) return sideSpaces[Math.floor(Math.random() * 2)]
     if (sideSpaces != null && sideSpaces.length == 1) return sideSpaces[0]
@@ -386,7 +377,6 @@ function getVerticalConnectOf(num, color) {
 
 function getHorizontalConnectOf(num, color) {
     
-  console.log("getHorizontal fired")
   let nextSpace = lastMove
   let startingSpace = lastMove
   const checkedSpaces = []
