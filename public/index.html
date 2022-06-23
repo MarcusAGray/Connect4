@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@300;900&display=swap" rel="stylesheet">
+  <title>Connect 4</title>
+</head>
+<body>
+  <header>
+    <h1>Connect 4</h1>
+  </header>
+  <div class="menu">
+    <div class="banner"><h3>Menu</h3></div>
+    <div class="menuContents">
+      <p>Please choose a single player or multiplayer game.</p>
+      <button id="single-btn" class="menu-btn">Single Player</button>
+      <button id="multi-btn" class="menu-btn">MultiPlayer</button>
+      <p id="menuText"></p>
+    </div>
+  </div>
+  <div class = "main-container blurred">
+    <main class="playing-area"></main>
+
+    <section class="side-section">
+      <div class="game-info-display">
+        <div class="game-wins-container">
+          <p id="player-wins-display">Your Wins:</p>
+          <p id="opponent-wins-display">Opponent's Wins: </p>
+        </div>
+        <div class="scores-container">
+          <p id="player-score">0</p>
+          <p id="opponent-score">0</p>
+        </div>
+      </div> 
+      <div class="mid-level-box">
+        <p id="turn">Turn: </p>
+        <div class="btn-container">
+          <button id="quit-btn">Quit</button>
+        </div>
+      </div>
+      <div id="player-box-two">
+      </div>
+    </section>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="./app.js" type="module"></script>
+</body>
+</html>

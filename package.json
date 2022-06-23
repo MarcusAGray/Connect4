@@ -1,0 +1,26 @@
+{
+  "name": "connect4",
+  "version": "1.0.0",
+  "description": "<h1>Connect4</h1>",
+  "main": "server.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MarcusAGray/Connect4.git"
+  },
+  "author": "Marcus",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MarcusAGray/Connect4/issues"
+  },
+  "homepage": "https://github.com/MarcusAGray/Connect4#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "socket.io": "^4"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}

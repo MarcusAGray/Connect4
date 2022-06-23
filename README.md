@@ -6,7 +6,8 @@ Connect 4 game using CSS and vanilla javascript.
 
 <h2>Overview</h2>
 
-Simply a Connect 4 game that lets a user play with the computer. An attempt was made to prevent the game from being too easy by letting the 
+A Connect 4 game that lets a user play single player with the computer or multiplayer with another human. 
+For single player games an attempt was made to prevent the game from being too easy by letting the 
 program spot easy wins for itself and obvious threats from the player and act accordingly. 
 
 
@@ -18,8 +19,8 @@ After each move there is a check for wins, which could be vertical, horizontal, 
 
 As stated in the overview an attempt was made to make the program play somewhat 'intelligently', at least to stop the game from being far too easy, 
 which would lead to a dull experience for the player. I used much of the functionality that checked for wins and used them to check for threats and 
-opportunities - for example if the player has a vertical connect three and there are no other detected threats or opportunities, the program will 
-place its token to as to block a connect 4.
+opportunities - for example if the player has a vertical connect three and there are no other detected threats or opportunities, the program will place its token to as to block a connect 4.
+
 
 ![image](https://user-images.githubusercontent.com/17533749/174474707-b4b9ee60-7094-4e44-81d9-a995d2233416.png)
 
