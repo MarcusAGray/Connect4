@@ -3,14 +3,17 @@ const app = express();
 const { createServer } = require("http");
 const { Server } = require("socket.io");
 const httpServer = createServer(app);
+require('dotenv').config();
+
+const port = process.env.PORT || 3000;
 
 const io = new Server(httpServer, { });
 
 
 app.use(express.static('./public'));
 
-httpServer.listen(3000, () => {
-  console.log("server listening on port 3000...")
+httpServer.listen(port, () => {
+  console.log(`server listening on port ${port}...`)
 });
 
 let connections = [null, null]
