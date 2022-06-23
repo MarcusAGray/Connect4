@@ -6,6 +6,7 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, { });
 
+
 app.use(express.static('./public'));
 
 httpServer.listen(3000, () => {
@@ -15,8 +16,8 @@ httpServer.listen(3000, () => {
 let connections = [null, null]
 
 io.on("connection", (socket) => {
+  let playerIndex = -1;
   socket.on("multiplayer", () => {
-    let playerIndex = -1;
     for (const i in connections) {
       if (connections[i] === null) {
         playerIndex = i
@@ -64,4 +65,9 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     connections = [null, null]
   });
+
+  setTimeout(() => {
+    socket.emit('timeout')
+    socket.disconnect()
+  }, (1000 * 60 * 20))
 });

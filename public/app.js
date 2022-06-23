@@ -39,7 +39,7 @@ let menu = document.querySelector('.menu')
 const menuPara = document.getElementById('menuText')
 
 let quitBtn = document.getElementById('quit-btn')
-quitBtn.addEventListener('click', () => quit(false))
+quitBtn.addEventListener('click', () => quit('playerQuit'))
 
 let canStartGame = true
 let lastMove
@@ -50,6 +50,8 @@ let opponentColor = 'yellow'
 
 let currentPlayer = 'user'
 let isMultiPlayer = false
+
+let gameOn
 
 const socket = io();
 socket.disconnect()
@@ -64,7 +66,9 @@ function startSinglePlayerGame() {
 }
 
 function startMultiplayerGame() {
+  console.log('test1')
   if(isMultiPlayer) return
+  console.log('test2')
   menuPara.textContent = 'Waiting for another player to join the server...'
   isMultiPlayer = true
   socket.connect()
@@ -85,6 +89,7 @@ function startGame() {
 
   if(!canStartGame) return
   canStartGame = false
+  gameOn = true
 
   menu.style.display = 'none'
   mainContainer.classList.remove('blurred')
@@ -165,7 +170,7 @@ function gameOver(winner) {
   setTimeout(() => startGame(), 3000)
 }
 
-function quit(hasOpponentQuit) {
+function quit(reason) {
   
   boardEl.classList.remove('shift')
   mainContainer.classList.add('blurred')
@@ -180,6 +185,7 @@ function quit(hasOpponentQuit) {
   isPlayerPrevWinner = null
   
   canStartGame = true
+  gameOn = false
   lastMove = null
   secondLastMove = null
   color = 'red'
@@ -200,19 +206,23 @@ function quit(hasOpponentQuit) {
     menuPara.textContent = "You quit the game"
   }
   
-  if(isMultiPlayer && !hasOpponentQuit) {
+  if(isMultiPlayer && reason == 'playerQuit') {
     socket.emit('quit')
     menuPara.textContent = "You quit the game"
   }
 
-  if(isMultiPlayer && hasOpponentQuit){
+  if(isMultiPlayer && reason == 'opponentQuit'){
     menuPara.textContent = "Your opponent has left the game"
   }
+
+  if(reason == 'timeout'){
+    menuText.textContent = 'You have reached the 20 minute time limit'
+  }
+
   if (isMultiPlayer) {
     isMultiPlayer = false
   } 
   socket.disconnect()
-
 }
 
 
@@ -272,9 +282,17 @@ socket.on("reveal-win", (winPositions) => {
 })
 
 socket.on('quit', () => {
-  quit(true)
+  quit('opponentQuit')
 })
 
+socket.on('timeout', () => {
+  if(isMultiPlayer) isMultiPlayer = false
+  if(gameOn) {
+    quit('timeout')
+  } else {
+    menuText.textContent = 'You have reached the 20 minute time limit'
+  }
+})
 
 //UTILS
 function getSpace(columnId, rowId) {
