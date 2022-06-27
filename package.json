@@ -4,7 +4,7 @@
   "description": "<h1>Connect4</h1>",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js"
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
