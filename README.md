@@ -1,5 +1,7 @@
 <h1>Connect4</h1>
 
+<a href="https://connect4-mag.herokuapp.com/"> Link </a> 
+
 Connect 4 game using CSS and vanilla javascript.
 
 <img src="https://user-images.githubusercontent.com/17533749/174474610-c16c7dba-4d7e-471f-b84a-c4a1519157ad.png" width="800">
