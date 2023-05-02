@@ -3,7 +3,11 @@
 
 Connect 4 game using CSS and vanilla javascript.
 
+<b>Available to view <a href="https://connect-mag2.herokuapp.com/">here.</a></b>
+
 <img src="https://user-images.githubusercontent.com/17533749/174474610-c16c7dba-4d7e-471f-b84a-c4a1519157ad.png" width="800">
+
+
 
 <h2>Overview</h2>
 
